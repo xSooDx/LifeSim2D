@@ -59,7 +59,7 @@ class UniformCrossover(Crossover):
         return [newchromosome1,newchromosome2]
         
   
-def mutateorg(self,chromosome):
+def mutateorg(chromosome):
     length  = len(chromosome)
     index = random.randint(0,length-1)
     chromosome[index] = chromosome[index] + 1* random.choice([1,-1]) # change value by 1
