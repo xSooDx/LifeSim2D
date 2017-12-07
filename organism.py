@@ -84,22 +84,26 @@ class Animal(Organism):
         0 - life
         1 - strength        
         2 - maxenergy
-        3 - foodaffinity
+        3 - reproduction rate
     """
     def __init__(self,chromosome,species,factory):
         Organism.__init__(self,chromosome,species,factory)
         self.strength = self.chromosome[1]
         self.maxenergy = self.chromosome[2]
-        self.foodaffinity = self.chromosome[3]
-        self.energy = math.ceil(self.maxenergy * 0.5)
+        self.reprrate = self.chromosome[3]
+        #self.foodaffinity = self.chromosome[4]
+        self.energy = math.ceil(self.maxenergy * 0.7)
+        self.reprval = 0
+       # self.splitchance = self.chromosome[4]
 
     def update(self):
         Organism.update(self)
         self.energy-=1
+        self.reprval += 1
         if self.energy <=0:
             raise OrganismDied("Starved")
         self.roam()
-        if self.energy > math.ceil(self.maxenergy * 0.75) and self.reproduce(1):
+        if self.reprval > self. reprrate and self.energy > math.ceil(self.maxenergy * 0.75) and self.reproduce(1):
             pass
         else: self.eat()
      
@@ -116,7 +120,7 @@ class Animal(Organism):
     
     def eat(self):
         food = []
-        for i in self.parent.getNeighbours():
+        for i in self.parent.getNeighbours(2):
             org = i.getComponent('organism')
             if isinstance(org,Plant) or (isinstance(org,Animal) and not org.species==self.species):
                 food.append(org)
@@ -141,7 +145,9 @@ class Animal(Organism):
             
         
     def reproduce(self,mutate,energy=None):
-        mates = []
+    
+        mates= []
+                
         for i in self.parent.getNeighbours():
             org = i.getComponent('organism')
             if isinstance(org,type(self)) and org.species==self.species:
@@ -169,7 +175,8 @@ class Animal(Organism):
         try:
             p = random.choice(self.parent.getEmptyNeighbourhood())
             c = self.factory.create(self.species, selectchromo, p)
-            self.energy -= self.maxenergy * 0.4
+            self.energy *= 0.5
+            self.reprval =0
             #print(self, "reproduced with",mate,":" , c)
             return c
         except IndexError as e:
@@ -211,6 +218,12 @@ class AnimalDrawComponent(OrganismDrawComponent):
             self.color=color.ORANGE
         elif species == 6:
             self.color=color.BLUE
+        elif species == 7:
+            self.color=color.PINK
+        elif species == 8:
+            self.color=color.PURPLE
+        elif species == 9:
+            self.color=color.MARINE_GREEN
         else:
             self.color=color.RED
 
@@ -284,7 +297,7 @@ def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_
                     c = base_c
                     if(mutate):
                         c = cross.mutateorg(base_c)
-                    plantFactory.create(i,c,[x1,y1])
+                    plantFactory.create(0,c,[x1,y1])
                     t-=1
                 except Exception as e:
                     #print("plants",e)
@@ -311,8 +324,8 @@ def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_
                     pass
 
 def genAnimalChromosome():
-    return [random.randint(1,100),random.randint(1,100),random.randint(1,100),random.randint(1,100)]
+    return [random.randint(30,100),random.randint(30,100),random.randint(30,100),random.randint(5,100)]
     
 def  genPlantChromosome():
-    return [random.randint(1,100),random.randint(1,100)]
+    return [random.randint(25,90),random.randint(1,85)]
 

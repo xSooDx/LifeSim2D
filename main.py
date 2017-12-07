@@ -7,7 +7,7 @@ if __name__=="__main__":
     programName = sys.argv[0]
     arguments = sys.argv[1:]        
     argCount = len(arguments)
-    sw,sh,ww,wh,fps = (1000,1000,100,100,30)
+    sw,sh,ww,wh,fps = (800,800,50,50,15)
     caption = "Life Simulator"
     try:
         sw = arguments[0]

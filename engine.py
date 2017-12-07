@@ -20,7 +20,7 @@ class Engine:
         self.state = 1  
         self.fps = fps
         self.frame=0
-        initPopulation(self.pf, self.af, world_size, 5,10,5, 10, 15)
+        initPopulation(self.pf, self.af, world_size, 10,20,4, 10, 15)
         
     def quit(self):
         pygame.quit()
