@@ -60,9 +60,13 @@ class UniformCrossover(Crossover):
         
   
 def mutateorg(chromosome):
+    print(chromosome)
     length  = len(chromosome)
     index = random.randint(0,length-1)
-    chromosome[index] = chromosome[index] + 1* random.choice([1,-1]) # change value by 1
+    chromosome[index] += 1* random.choice([1,-1]) # change value by 1
+    if chromosome[index] < 0: chromosome[index] = 0
+    print(chromosome)
+    print()
     return chromosome         
             
             

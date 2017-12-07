@@ -82,13 +82,9 @@ class World:
     
     # Draws all world objects if they have a draw component
     def drawWorld(self):
-        for i in self.map:
-            for j in i:
-                print('|',end='')
-                try:
-                    j.draw()
-                except: print(' ',end='')
-            print('|')
+        for i in self:
+                    i.draw()
+
             
     # Updates all world objects
     def updateWorld(self):
@@ -260,7 +256,7 @@ class WorldObject():
                 self.components[i].update()
         except ObjectDestroyed as od:
             self.destroy()
-            print(od)
+            #print(od)
             
     
     def getPos(self):

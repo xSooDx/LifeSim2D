@@ -2,6 +2,8 @@ import abc
 import crossover as cross
 import random
 import math
+import pygame
+import color
 from world import World, Component, DrawComponent, ObjectDestroyed
 
 class OrganismDied(ObjectDestroyed):
@@ -62,7 +64,7 @@ class Plant(Organism):
         if(mutate):
             chromosome = cross.mutateorg(chromosome)
         
-        n = self.parent.getEmptyNeighbourhood(2)
+        n = self.parent.getEmptyNeighbourhood(3)
         
         if n:
             p = n[random.randint(0,len(n)-1)]
@@ -97,7 +99,7 @@ class Animal(Organism):
         if self.energy <=0:
             raise OrganismDied("Starved")
         self.roam()
-        if self.energy > math.ceil(self.maxenergy * 0.75) and self.reproduce(0):
+        if self.energy > math.ceil(self.maxenergy * 0.75) and self.reproduce(1):
             pass
         else: self.eat()
      
@@ -131,7 +133,7 @@ class Animal(Organism):
                         self.energy += f.age
                         
                     f.destroy()
-                    print(self,"ate",f)
+                    #print(self,"ate",f)
                     return True
                     
         except IndexError as e:
@@ -152,10 +154,10 @@ class Animal(Organism):
             
         children = [] # the children on reproduction
         obj = cross.UniformCrossover()
-        if(mate.energy>0 and mate.energy< 30):
-            obj = cross.TwoPointCrossover()
-        elif(mate.energy>30 and mate.energy< 60):
+        if(mate.energy< self.energy *0.3):
             obj = cross.OnePointCrossover()
+        elif(mate.energy< self.energy*0.6):
+            obj = cross.TwoPointCrossover()
         
         
         children = obj.crossover(self.chromosome,mate.chromosome)
@@ -168,29 +170,62 @@ class Animal(Organism):
             p = random.choice(self.parent.getEmptyNeighbourhood())
             c = self.factory.create(self.species, selectchromo, p)
             self.energy -= self.maxenergy * 0.4
-            print(self, "reproduced with",mate,":" , c)
+            #print(self, "reproduced with",mate,":" , c)
             return c
         except IndexError as e:
             return None
         
-        
-class PlantDrawComponent(DrawComponent):
-    def draw(self):
-        print("P",end="")
 
-class AnimalDrawComponent(DrawComponent):
+class OrganismDrawComponent(DrawComponent):
+    def __init__(self,gameScreen,size):
+        super().__init__()
+        self.screen=gameScreen
+        self.size = size
+        self.color = color.WHITE
+        
     def draw(self):
-        print(self.parent.getComponent('organism').species,end="")
+        pos = self.parent.pos
+        pos = (pos[0]*self.size[0],pos[1]*self.size[1])
+        pygame.draw.rect(self.screen,self.color,(pos[0],pos[1],self.size[0],self.size[1]))
+        
+class PlantDrawComponent(OrganismDrawComponent):
+    def __init__(self,gameScreen,world):
+        super().__init__(gameScreen,world)
+        self.color = color.LIGHT_GREEN
+        
+
+
+class AnimalDrawComponent(OrganismDrawComponent):
+    def __init__(self,gameScreen,world,species):
+        super().__init__(gameScreen,world)
+       
+        if species == 1:
+            self.color=color.GRAY
+        elif species == 2:
+            self.color=color.YELLOW
+        elif species == 3:
+            self.color=color.CYAN
+        elif species == 4:
+            self.color=color.MAGENTA
+        elif species == 5:
+            self.color=color.ORANGE
+        elif species == 6:
+            self.color=color.BLUE
+        else:
+            self.color=color.RED
+
             
 class OrganismFactory(abc.ABC):
     """
     Declare an interface for operations that create abstract product
     objects.
     """
-    def __init__(self,world):
+    def __init__(self, world, screen):
         assert isinstance(world,World)
         self.world = world
-    
+        self.screen = screen
+        self.size = (screen.get_width()/world.width, screen.get_height()/world.height)
+        
     @abc.abstractmethod
     def create(self,species,chromosome,pos,mutate=0): # pass chromosome, mutaation boolean
         pass
@@ -207,7 +242,9 @@ class PlantFactory(OrganismFactory):
             
         pc = Plant(chromosome,species,self)
         
-        dc = PlantDrawComponent()
+        
+        
+        dc = PlantDrawComponent(self.screen,self.size)
         
         return self.world.addObject(World.WorldObjBuilder().setDrawComponent(dc).addComponent('organism',pc).build(),
                                        pos)
@@ -227,10 +264,55 @@ class AnimalFactory(OrganismFactory):
             
         ac = Animal(chromosome,species,self)
         
-        dc = AnimalDrawComponent()
+        dc = AnimalDrawComponent(self.screen,self.size,species)
         
         return self.world.addObject(World.WorldObjBuilder().setDrawComponent(dc).addComponent('organism',ac).build(),
                                        pos)
         
 
+
+def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_clusters=5, num_plants=5, animal_species=5, num_animals=5, mutate = 0):
+    for i in range(plant_clusters):
+        x = random.randrange(w_size[0])
+        y = random.randrange(w_size[1])
+        base_c = genPlantChromosome()
+        t = num_plants
+        while t:
+                try:
+                    x1 = random.randrange(max(0,x-cluster_radius),min(w_size[0],x+cluster_radius+1))
+                    y1 = random.randrange(max(0,y-cluster_radius),min(w_size[1],y+cluster_radius+1))
+                    c = base_c
+                    if(mutate):
+                        c = cross.mutateorg(base_c)
+                    plantFactory.create(i,c,[x1,y1])
+                    t-=1
+                except Exception as e:
+                    #print("plants",e)
+                    pass
+
+                    
+    for i in range(animal_species):
+        x = random.randrange(w_size[0])
+        y = random.randrange(w_size[1])
+        base_c = genAnimalChromosome()
+        t = num_animals
+        while t:
+                try:
+                    x1 = random.randrange(max(0,x-cluster_radius),min(w_size[0],x+cluster_radius+1))
+                    y1 = random.randrange(max(0,y-cluster_radius),min(w_size[1],y+cluster_radius+1))
+                    c = base_c
+                    if(mutate):
+                        c = cross.mutateorg(base_c)
+                    
+                    animalFactory.create(i,c,[x1,y1])
+                    t-=1
+                except Exception as e:
+                    #print(e)
+                    pass
+
+def genAnimalChromosome():
+    return [random.randint(1,100),random.randint(1,100),random.randint(1,100),random.randint(1,100)]
     
+def  genPlantChromosome():
+    return [random.randint(1,100),random.randint(1,100)]
+
