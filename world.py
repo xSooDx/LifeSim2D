@@ -28,8 +28,30 @@ class _worldIterator:
         raise StopIteration
 
  
+class Component(abc.ABC):    
+    def __init__(self):
+        self.parent=None
+        
+    @abc.abstractmethod
+    def update():
+        pass
+        
+
+        
+# Drawable component baseclass
+class DrawComponent(Component):
+    def __init__(self):
+        super().__init__()
+        
+    def update(self):
+        pass
+        
+    def draw(self):
+        print(self.a,end='')
+ 
+ 
 # Game World Class
-class World:
+class World(DrawComponent):
     # Builder class for world objects
     class WorldObjBuilder:
         def __init__(self):
@@ -81,13 +103,13 @@ class World:
         return _worldIterator(self.head, self.tail)
     
     # Draws all world objects if they have a draw component
-    def drawWorld(self):
+    def draw(self):
         for i in self:
                     i.draw()
 
             
     # Updates all world objects
-    def updateWorld(self):
+    def update(self):
         if self.numObjects == 0:
             raise EmptyWorld()
         for o in self:
@@ -202,29 +224,10 @@ class World:
 
     
 
-class Component(abc.ABC):    
-    def __init__(self):
-        self.parent=None
-        
-    @abc.abstractmethod
-    def update():
-        pass
-        
 
-        
-# Drawable component baseclass
-class DrawComponent(Component):
-    def __init__(self):
-        super().__init__()
-        
-    def update(self):
-        pass
-        
-    def draw(self):
-        print(self.a,end='')
 
 #World Object Class
-class WorldObject():
+class WorldObject(Component):
     def __init__(self):
         self.next=None
         self.prev=None

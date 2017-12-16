@@ -41,12 +41,12 @@ class Engine:
         
     def draw(self):
         self.gameDisplay.fill(color.BLACK)
-        self.world.drawWorld()
+        self.world.draw()
         self.stats.displayStats(0,1)
         pygame.display.update()
         
     def update(self):
-        self.world.updateWorld()
+        self.world.update()
         self.stats.analyseWorld(self.world)
         self.frame+=1
     

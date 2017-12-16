@@ -74,9 +74,9 @@ class Plant(Organism):
             chromosome = cross.mutateorg(chromosome)
             
             
-        n = self.parent.getEmptyNeighbourhood(4)
+        n = self.parent.getEmptyNeighbourhood(3)
         
-        if len(n)>20:
+        if len(n)>22:
             p = n[random.randint(0,len(n)-1)]
             #print(p)
             c = self.factory.create(self.species,chromosome,p)
