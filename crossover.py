@@ -1,5 +1,6 @@
 import abc
 import random
+
 class Crossover():
     """
     Declare an interface common to all supported algorithms. Context
@@ -17,6 +18,7 @@ class OnePointCrossover(Crossover):
     
 
     def crossover(self,chromosome1,chromosome2):
+        #print("1pc")
         length = len(chromosome1)
         halflength = int(length/2)
         newchromosome1 = [0]*length
@@ -31,6 +33,7 @@ class OnePointCrossover(Crossover):
 class TwoPointCrossover(Crossover):
 
     def crossover(self,chromosome1,chromosome2):
+        #print("2pc")
         length = len(chromosome1)
         thirdlength = int(length/3)
         newchromosome1 = [0]*length
@@ -45,7 +48,9 @@ class TwoPointCrossover(Crossover):
         
         
 class UniformCrossover(Crossover):
+    
     def crossover(self,chromosome1,chromosome2):
+        #print("Uc")
         length = len(chromosome1)
         newchromosome1 = [0]*length
         newchromosome2 = [0]*length
@@ -63,10 +68,16 @@ def mutateorg(chromosome):
     #print(chromosome)
     length  = len(chromosome)
     index = random.randint(0,length-1)
-    chromosome[index] += random.choice([1,1,2,1,1,1,1,1,2,1,1,2,5])* random.choice([1,-1]) # change value by 1
+    chromosome[index] += random.choice([1,1,2,1,1,1,1,1,2,1,1,2,5,1,1,1,1,2,10,1,2,1,1,1,1,1,2,1,1,2,5])* random.choice([1,-1]) # change value by 1
     if chromosome[index] < 0: chromosome[index] = 0
     #print(chromosome)
     #print()
     return chromosome         
             
-            
+
+
+_crossovers = {0:UniformCrossover(), 1:OnePointCrossover(), 2:TwoPointCrossover()}
+_clen = len(_crossovers)
+def getCrossover( i ):
+    return _crossovers[ i%_clen ]
+        

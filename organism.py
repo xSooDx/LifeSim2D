@@ -6,7 +6,7 @@ import pygame
 import color
 from world import World, Component, DrawComponent, ObjectDestroyed
 
-class OrganismDied(ObjectDestroyed):
+class OrganismDied(ObjectDestroyed):        
     pass
     
     
@@ -53,23 +53,36 @@ class Plant(Organism):
     def __init__(self,chromosome,species,factory):  # chromosome has life and reproduction rate in that order
         Organism.__init__(self,chromosome,species,factory)
         self.reprrate = chromosome[1]
-
+        self.health = chromosome[2]
+        self.maxhealth = chromosome[2]
+        self.health = chromosome[2]*0.75
+        self.reprval = 0
+        
     def update(self):
+    
         Organism.update(self)
-        if not self.age % (self.reprrate or 1):
-            self.reproduce(1)
+        self.reprval+=1
+        if self.health<self.maxhealth:
+            self.health+=1
+            
+        if self.reprval == self.reprrate:
+            self.reproduce(2)
         
     def reproduce(self,mutate,energy=None):
         chromosome = self.chromosome
-        if(mutate):
+        for i in range(mutate):
             chromosome = cross.mutateorg(chromosome)
+            
+            
+        n = self.parent.getEmptyNeighbourhood(4)
         
-        n = self.parent.getEmptyNeighbourhood(3)
-        
-        if n:
+        if len(n)>20:
             p = n[random.randint(0,len(n)-1)]
             #print(p)
-            return self.factory.create(self.species,chromosome,p)
+            c = self.factory.create(self.species,chromosome,p)
+            self.reprrate+=1
+            self.reprval=0
+            return c
         else: return None
         
 class Animal(Organism):
@@ -85,16 +98,19 @@ class Animal(Organism):
         1 - strength        
         2 - maxenergy
         3 - reproduction rate
+        4 - chance to split
+        5 - crossover type
     """
     def __init__(self,chromosome,species,factory):
         Organism.__init__(self,chromosome,species,factory)
         self.strength = self.chromosome[1]
         self.maxenergy = self.chromosome[2]
         self.reprrate = self.chromosome[3]
-        #self.foodaffinity = self.chromosome[4]
-        self.energy = math.ceil(self.maxenergy * 0.7)
+        self.energy = math.ceil(self.maxenergy * 0.6)
         self.reprval = 0
-       # self.splitchance = self.chromosome[4]
+        self.splitchance = self.chromosome[4]
+        self.crossover = self.chromosome[5]
+        
 
     def update(self):
         Organism.update(self)
@@ -103,10 +119,37 @@ class Animal(Organism):
         if self.energy <=0:
             raise OrganismDied("Starved")
         self.roam()
-        if self.reprval > self. reprrate and self.energy > math.ceil(self.maxenergy * 0.75) and self.reproduce(1):
-            pass
-        else: self.eat()
-     
+        if self.canReproduce():
+            g = random.randint(0,100)
+            if g < self.splitchance:
+                self.split(1)
+            else: self.reproduce(1)
+        else: 
+            self.eat()
+            
+            
+    # Split into two child organisms
+    def split(self, mutate =1):
+        chromosome = self.chromosome
+        if(mutate):
+            chromosome = cross.mutateorg(chromosome)
+        
+        n = self.parent.getEmptyNeighbourhood(1)
+        
+        if n:
+            p = n[random.randint(0,len(n)-1)]
+            #print(p)
+            c = self.factory.create(self.species,chromosome,p)
+            self.energy *=0.4
+            return c
+        else: return None
+    
+    
+    # Check if can reproduce
+    def canReproduce(self):
+        return self.reprval > self. reprrate and self.energy > math.ceil(self.maxenergy * 0.80) 
+        
+    # Move randomly
     def roam(self):
         try:
             options = self.parent.getEmptyNeighbourhood()
@@ -118,6 +161,8 @@ class Animal(Organism):
             
         return None
     
+    
+    #Eat nearest organism
     def eat(self):
         food = []
         for i in self.parent.getNeighbours(2):
@@ -130,25 +175,31 @@ class Animal(Organism):
                 i = random.randint(0,len(food)-1)
                 f = food[i]
                 food.pop(i)
-                if isinstance(f,Plant) or self.strength >= f.strength:
-                    try:
-                        self.energy += f.energy
-                    except: 
+                
+                if isinstance(f,Plant) :
+                    if self.strength >= f.health:
                         self.energy += f.age
-                        
-                    f.destroy()
-                    #print(self,"ate",f)
-                    return True
-                    
+                        f.destroy()
+                    else:
+                        f.health -= self.strength
+                elif isinstance(f,Animal):
+                        if self.strength >= f.strength:
+                            self.energy += f.age
+                            f.destroy()
+                        #else:
+                            #f.strength -= self.strength
+                return True
+
         except IndexError as e:
             return False
             
-        
-    def reproduce(self,mutate,energy=None):
+    
+    #Mate with another animal of the same species
+    def reproduce(self,mutate=0,energy=None):
     
         mates= []
                 
-        for i in self.parent.getNeighbours():
+        for i in self.parent.getNeighbours(3):
             org = i.getComponent('organism')
             if isinstance(org,type(self)) and org.species==self.species:
                 mates.append(org)
@@ -159,17 +210,21 @@ class Animal(Organism):
             return None
             
         children = [] # the children on reproduction
-        obj = cross.UniformCrossover()
-        if(mate.energy< self.energy *0.3):
+        obj = cross.getCrossover(self.crossover)
+        if(mate.energy < self.maxenergy*0.1):
+            return None
+        elif(mate.energy< self.maxenergy *0.3):
             obj = cross.OnePointCrossover()
-        elif(mate.energy< self.energy*0.6):
+        elif(mate.energy< self.maxenergy*0.6):
             obj = cross.TwoPointCrossover()
         
         
         children = obj.crossover(self.chromosome,mate.chromosome)
-        selectchromo = random.choice(children)
+        #print(obj)
+        #selectchromo = random.choice(children)
+        selectchromo = children[0]
     
-        if(mutate):
+        for i in range (mutate):
             selectchromo = cross.mutateorg(selectchromo)
     
         try:
@@ -180,6 +235,9 @@ class Animal(Organism):
             #print(self, "reproduced with",mate,":" , c)
             return c
         except IndexError as e:
+            return None
+        except Exception as e:
+            print(e)
             return None
         
 
@@ -196,11 +254,9 @@ class OrganismDrawComponent(DrawComponent):
         pygame.draw.rect(self.screen,self.color,(pos[0],pos[1],self.size[0],self.size[1]))
         
 class PlantDrawComponent(OrganismDrawComponent):
-    def __init__(self,gameScreen,world):
+    def __init__(self,gameScreen,world,species):
         super().__init__(gameScreen,world)
-        self.color = color.LIGHT_GREEN
-        
-
+        self.color = color.GREEN
 
 class AnimalDrawComponent(OrganismDrawComponent):
     def __init__(self,gameScreen,world,species):
@@ -222,8 +278,6 @@ class AnimalDrawComponent(OrganismDrawComponent):
             self.color=color.PINK
         elif species == 8:
             self.color=color.PURPLE
-        elif species == 9:
-            self.color=color.MARINE_GREEN
         else:
             self.color=color.RED
 
@@ -257,7 +311,7 @@ class PlantFactory(OrganismFactory):
         
         
         
-        dc = PlantDrawComponent(self.screen,self.size)
+        dc = PlantDrawComponent(self.screen,self.size,species)
         
         return self.world.addObject(World.WorldObjBuilder().setDrawComponent(dc).addComponent('organism',pc).build(),
                                        pos)
@@ -297,13 +351,12 @@ def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_
                     c = base_c
                     if(mutate):
                         c = cross.mutateorg(base_c)
-                    plantFactory.create(0,c,[x1,y1])
+                    plantFactory.create(i,c,[x1,y1])
                     t-=1
                 except Exception as e:
-                    #print("plants",e)
+                    print("plants",e)
                     pass
 
-                    
     for i in range(animal_species):
         x = random.randrange(w_size[0])
         y = random.randrange(w_size[1])
@@ -316,16 +369,18 @@ def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_
                     c = base_c
                     if(mutate):
                         c = cross.mutateorg(base_c)
-                    
+                        c = cross.mutateorg(base_c)
+                        c = cross.mutateorg(base_c)
+                        
                     animalFactory.create(i,c,[x1,y1])
                     t-=1
                 except Exception as e:
-                    #print(e)
+                    print(e)
                     pass
 
 def genAnimalChromosome():
-    return [random.randint(30,100),random.randint(30,100),random.randint(30,100),random.randint(5,100)]
+    return [random.randint(30,100),random.randint(30,100),random.randint(30,100),random.randint(5,100),random.randint(5,100),random.randint(0,3)]
     
 def  genPlantChromosome():
-    return [random.randint(25,90),random.randint(1,85)]
+    return [random.randint(35,110),random.randint(5,100),random.randint(5,100)]
 
