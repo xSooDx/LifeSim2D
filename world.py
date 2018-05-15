@@ -2,6 +2,7 @@ import abc
 import crossover as cross
 import random
 
+
 class ObjectDestroyed(Exception):
     pass
     
@@ -55,16 +56,14 @@ class World(DrawComponent):
     # Builder class for world objects
     class WorldObjBuilder:
         def __init__(self):
-            self.dc=None
-            self.org=None
             self.comps = {}
             
         # Add a drawable Component
         def setDrawComponent(self, dc):
-            if isinstance(dc,Component):
+            if isinstance(dc,DrawComponent):
                 self.comps['draw'] = dc
             else:
-                raise TypeError("Not of type Component")
+                raise TypeError("Not of type Draw Component")
             return self
         
         
@@ -74,6 +73,9 @@ class World(DrawComponent):
             else:
                 raise TypeError("Not of type Component")
             return self
+        
+        #def removeComponent(self, cname):
+            
         
         # Create and return object
         def build(self):
@@ -206,9 +208,9 @@ class World(DrawComponent):
     def getEmptyNeighbourhood(self,pos,r=1):
         res=[]
         for i in range(-r,r+1):
-            x = pos[0]+i
+            x = (pos[0]+i) % self.width
             for j in range(-r,r+1):
-                y = pos[1]+j
+                y = (pos[1]+j) % self.height
                 if i==0 and j==0:
                     pass
                 else:

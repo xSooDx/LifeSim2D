@@ -105,10 +105,10 @@ class Animal(Organism):
         Organism.__init__(self,chromosome,species,factory)
         self.strength = self.chromosome[1]
         self.maxenergy = self.chromosome[2]
-        self.reprrate = self.chromosome[3]
+        self.reprrate = self.life * self.chromosome[3]/100
         self.energy = math.ceil(self.maxenergy * 0.6)
         self.reprval = 0
-        self.splitchance = self.chromosome[4]
+        self.splitchance = (300/(1+self.chromosome[4]))
         self.crossover = self.chromosome[5]
         
 
@@ -147,7 +147,7 @@ class Animal(Organism):
     
     # Check if can reproduce
     def canReproduce(self):
-        return self.reprval > self. reprrate and self.energy > math.ceil(self.maxenergy * 0.80) 
+        return self.reprval >= self. reprrate and self.energy >= math.ceil(self.maxenergy * 0.80) 
         
     # Move randomly
     def roam(self):
@@ -186,8 +186,8 @@ class Animal(Organism):
                         if self.strength >= f.strength:
                             self.energy += f.age
                             f.destroy()
-                        #else:
-                            #f.strength -= self.strength
+                        else:
+                            f.strength -= self.strength
                 return True
 
         except IndexError as e:
@@ -211,12 +211,6 @@ class Animal(Organism):
             
         children = [] # the children on reproduction
         obj = cross.getCrossover(self.crossover)
-        if(mate.energy < self.maxenergy*0.1):
-            return None
-        elif(mate.energy< self.maxenergy *0.3):
-            obj = cross.OnePointCrossover()
-        elif(mate.energy< self.maxenergy*0.6):
-            obj = cross.TwoPointCrossover()
         
         
         children = obj.crossover(self.chromosome,mate.chromosome)
@@ -292,7 +286,7 @@ class OrganismFactory(abc.ABC):
         self.world = world
         self.screen = screen
         self.size = (screen.get_width()/world.width, screen.get_height()/world.height)
-        
+    
     @abc.abstractmethod
     def create(self,species,chromosome,pos,mutate=0): # pass chromosome, mutaation boolean
         pass
@@ -308,8 +302,6 @@ class PlantFactory(OrganismFactory):
             chromosome = cross.mutateorg(chromosome) # why red?
             
         pc = Plant(chromosome,species,self)
-        
-        
         
         dc = PlantDrawComponent(self.screen,self.size,species)
         
@@ -377,6 +369,8 @@ def initPopulation(plantFactory, animalFactory, w_size, cluster_radius=5, plant_
                 except Exception as e:
                     print(e)
                     pass
+
+                    
 
 def genAnimalChromosome():
     return [random.randint(30,100),random.randint(30,100),random.randint(30,100),random.randint(5,100),random.randint(5,100),random.randint(0,3)]

@@ -6,9 +6,31 @@ from world import World
 from organism import *
 from stats import Stats
 
+def initPopulation2(pf,af,ws):
+    x = int(ws[0]/2)
+    y = int(ws[1]/2)
+    c1 = [100,100,100,10,5,4]
+    c2 = [100,25,100,10,50,3]
+    
+    af.create(0,c1,[x,y])
+    af.create(0,c1,[x+1,y])
+    af.create(1,c2,[x+3,y+3])
+    af.create(1,c2,[x-3,y+3])
+    af.create(1,c2,[x-3,y-3])
+    af.create(1,c2,[x,y-3])
+    af.create(1,c2,[x+3,y])
+    af.create(1,c2,[x,y+3])
+    af.create(1,c2,[x-3,y])
+    af.create(1,c2,[x+4,y+4])
+    af.create(1,c2,[x-4,y+4])
+    af.create(1,c2,[x-4,y-4])
+    af.create(1,c2,[x,y-4])
+    af.create(1,c2,[x+4,y])
+    af.create(1,c2,[x,y+4])
+    af.create(1,c2,[x-4,y])
 
 class Engine:
-    def __init__(self,size,caption, world_size = (100,100), fps=30,seed=1000):
+    def __init__(self,size,caption, world_size = (100,100), fps=30,seed=3650):
         random.seed(seed)
         pygame.init()
         self.gameDisplay = pygame.display.set_mode(size)
@@ -23,7 +45,7 @@ class Engine:
         self.state = 1  
         self.fps = fps
         self.frame=0
-        initPopulation(self.pf, self.af, world_size, 20,800, 10 , 9, 200)
+        initPopulation2(self.pf, self.af, world_size)
         
     def quit(self):
         pygame.quit()

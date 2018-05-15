@@ -7,6 +7,35 @@ class Stats:
         self.num_animals = 0
         self.num_plans = 0
         
+    def _readOrganism(self,org):
+        if org:
+            if isinstance(org,Animal):
+                self.num_animals +=1
+                
+                if not org.species in self.animalSpecies:
+                    self.animalSpecies[org.species] = [0,0,0,0,0,0]
+                t = self.animalSpecies[org.species]
+                t[0]+=1
+                t[1]+=org.life
+                t[2]+=org.strength
+                t[3]+=org.maxenergy
+                
+                t[4]+=org.reprrate
+                t[5]+=org.splitchance
+                
+            elif isinstance(org,Plant):
+                
+                self.num_plants +=1
+                if not org.species in self.plantSpecies:
+                    self.plantSpecies[org.species] = [0,0,0,0]
+                
+                t = self.plantSpecies[org.species]
+                t[0]+=1
+                t[1]+=org.life
+                t[2]+=org.reprrate
+                t[3]+=org.maxhealth
+                
+                
     def analyseWorld(self, world):
         self.num_orgs=world.numObjects
         self.num_animals = 0
@@ -29,34 +58,9 @@ class Stats:
         self.plantSpecies = {}
         
         for i in world:
-            org =i.getComponent('organism')
+            org = i.getComponent('organism')
+            self._readOrganism(org)
             
-            if org:
-                if isinstance(org,Animal):
-                    self.num_animals +=1
-                    
-                    if not org.species in self.animalSpecies:
-                        self.animalSpecies[org.species] = [0,0,0,0,0,0]
-                    t = self.animalSpecies[org.species]
-                    t[0]+=1
-                    t[1]+=org.life
-                    t[2]+=org.strength
-                    t[3]+=org.maxenergy
-                    
-                    t[4]+=org.reprrate
-                    t[5]+=org.splitchance
-                    
-                elif isinstance(org,Plant):
-                    
-                    self.num_plants +=1
-                    if not org.species in self.plantSpecies:
-                        self.plantSpecies[org.species] = [0,0,0,0]
-                    
-                    t = self.plantSpecies[org.species]
-                    t[0]+=1
-                    t[1]+=org.life
-                    t[2]+=org.reprrate
-                    t[3]+=org.maxhealth
         
         for i in self.animalSpecies:
             t = self.animalSpecies[i]
